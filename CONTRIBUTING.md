@@ -31,9 +31,15 @@ Tests are run with:
 npm test
 ```
 
-**NOTE:** we run some integration tests against an active Netlify account. For these tests to pass you'll need to
-provide a Netlify auth token (using the `NETLIFY_AUTH_TOKEN` environment variable) or login via `./bin/run login` before
-running the tests.
+**NOTE:**
+
+Running some integration tests will require an active Netlify account to create a live site.
+
+You can either provide a [Netlify Auth Token](https://docs.netlify.com/cli/get-started/#obtain-a-token-in-the-netlify-ui) (through the `NETLIFY_AUTH_TOKEN` environment variable) or login via `./bin/run login` before running the tests.
+
+Running these tests won't result in any charges towards your Netlify account because they build a site locally and then deploy it.
+
+> We don't recommend doing this, but you can disable these tests by setting the `NETLIFY_TEST_DISABLE_LIVE` environment variable to `true`.
 
 In watch mode:
 
@@ -74,7 +80,7 @@ This repo uses [ava](https://github.com/avajs/ava) for testing. Any files in the
 
 We also test for a few other things:
 
-- Dependencies (used an unused)
+- Dependencies (used and unused)
 - Linting
 - Test coverage
 - Must work with Windows + Unix environments.
