@@ -69,7 +69,7 @@ To run the CLI locally:
 The CLI is written using the [oclif](https://oclif.io/) cli framework and the [netlify/js-client](https://github.com/netlify/js-client) open-api derived API client.
 
 - Commands live in the [`src/commands`](src/commands) folder.
-- The base command class which provides consistent config loading and an API client lives in [`src/base`](src/base).
+- The base command class which provides consistent config loading and an API client lives in [`src/utils/command.js`](src/utils/command.js).
 - Small utilities and other functionality live in [`src/utils`](src/utils).
 
 A good place to start is reading the base command README and looking at the commands folder.
