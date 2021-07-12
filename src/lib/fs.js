@@ -13,6 +13,7 @@ const copyFileAsync = promisify(fs.copyFile)
 const accessAsync = promisify(fs.access)
 const mkdtempAsync = promisify(fs.mkdtemp)
 const appendFileAsync = promisify(fs.appendFile)
+const renameAsync = promisify(fs.rename)
 
 const readFileAsyncCatchError = async (filepath) => {
   try {
@@ -38,6 +39,15 @@ const mkdirRecursiveAsync = (path) => makeDir(path)
 
 const rmdirRecursiveAsync = (path) => del(path, { force: true })
 
+const renameAsyncNoError = async (oldPath, newPath) => {
+  try {
+    await renameAsync(oldPath, newPath)
+    return true
+  } catch (_) {
+    return false
+  }
+}
+
 module.exports = {
   statAsync,
   readFileAsync,
@@ -52,4 +62,5 @@ module.exports = {
   rmdirRecursiveAsync,
   mkdtempAsync,
   appendFileAsync,
+  renameAsyncNoError,
 }

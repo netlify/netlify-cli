@@ -179,6 +179,8 @@
     "through2-filter": "^3.0.0",
     "through2-map": "^3.0.0",
     "to-readable-stream": "^2.1.0",
+    "toml": "^3.0.0",
+    "tomlify-j0.4": "^3.0.0",
     "update-notifier": "^5.0.0",
     "uuid": "^8.0.0",
     "wait-port": "^0.2.2",
@@ -209,8 +211,6 @@
     "sort-on": "^4.1.0",
     "strip-ansi": "^6.0.0",
     "temp-dir": "^2.0.0",
-    "toml": "^3.0.0",
-    "tomlify-j0.4": "^3.0.0",
     "tree-kill": "^1.2.2"
   },
   "ava": {
