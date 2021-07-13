@@ -66,9 +66,6 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           # NETLIFY_TEST_GITHUB_TOKEN is used to avoid reaching GitHub API limits in exec-fetcher.js
           NETLIFY_TEST_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Changes the polling interval used by the file watcher
-          CHOKIDAR_INTERVAL: 20
-          CHOKIDAR_USEPOLLING: 1
       - name: Get test coverage flags
         if: '${{ !env.IS_RELEASE }}'
         id: test-coverage-flags

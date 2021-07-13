@@ -102,13 +102,13 @@ class FunctionsRegistry {
     return this.functions.get(name)
   }
 
-  registerFunction(name, func) {
+  async registerFunction(name, func) {
     if (func.isBackground && !this.capabilities.backgroundFunctions) {
       this.logger.warn(getLogMessage('functions.backgroundNotSupported'))
     }
 
     this.functions.set(name, func)
-    this.buildFunctionAndWatchFiles(func)
+    await this.buildFunctionAndWatchFiles(func)
 
     this.logger.log(`${NETLIFYDEVLOG} ${chalk.green('Loaded')} function ${chalk.yellow(name)}.`)
   }
@@ -142,35 +142,36 @@ class FunctionsRegistry {
     })
 
     await Promise.all(deletedFunctions.map((func) => this.unregisterFunction(func.name)))
+    await Promise.all(
+      functions.map(async ({ mainFile, name, runtime: runtimeName }) => {
+        const runtime = runtimes[runtimeName]
 
-    functions.forEach(({ mainFile, name, runtime: runtimeName }) => {
-      const runtime = runtimes[runtimeName]
+        // If there is no matching runtime, it means this function is not yet
+        // supported in Netlify Dev.
+        if (runtime === undefined) {
+          return
+        }
 
-      // If there is no matching runtime, it means this function is not yet
-      // supported in Netlify Dev.
-      if (runtime === undefined) {
-        return
-      }
+        // If this function has already been registered, we skip it.
+        if (this.functions.has(name)) {
+          return
+        }
 
-      // If this function has already been registered, we skip it.
-      if (this.functions.has(name)) {
-        return
-      }
+        const func = new NetlifyFunction({
+          config: this.config,
+          errorExit: this.errorExit,
+          functionsDirectory: this.functionsDirectory,
+          mainFile,
+          name,
+          projectRoot: this.projectRoot,
+          runtime,
+          timeoutBackground: this.timeouts.backgroundFunctions,
+          timeoutSynchronous: this.timeouts.syncFunctions,
+        })
 
-      const func = new NetlifyFunction({
-        config: this.config,
-        errorExit: this.errorExit,
-        functionsDirectory: this.functionsDirectory,
-        mainFile,
-        name,
-        projectRoot: this.projectRoot,
-        runtime,
-        timeoutBackground: this.timeouts.backgroundFunctions,
-        timeoutSynchronous: this.timeouts.syncFunctions,
-      })
-
-      this.registerFunction(name, func)
-    })
+        return await this.registerFunction(name, func)
+      }),
+    )
 
     await this.setupDirectoryWatcher(directory)
   }
