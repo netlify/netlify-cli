@@ -468,7 +468,7 @@ class DeployCommand extends Command {
 
     const { synced: redirectsSynced, newConfigPath } = await syncRedirects({
       oldConfig: this.netlify.config,
-      newConfig,
+      newConfig: config,
       deployFolder,
       configPath,
     })
