@@ -22,7 +22,6 @@ module.exports = {
     'fp/no-mutating-assign': 0,
     'fp/no-mutating-methods': 0,
     'fp/no-mutation': 0,
-    'fp/no-proxy': 0,
     'fp/no-this': 0,
     'import/max-dependencies': 0,
     'node/no-sync': 0,
