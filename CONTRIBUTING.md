@@ -31,9 +31,15 @@ Tests are run with:
 npm test
 ```
 
-**NOTE:** we run some integration tests against an active Netlify account. For these tests to pass you'll need to
-provide a Netlify auth token (using the `NETLIFY_AUTH_TOKEN` environment variable) or login via `./bin/run login` before
-running the tests.
+**NOTE:**
+
+Running some integration tests will require an active Netlify account to create a live site.
+
+You can either provide a [Netlify Auth Token](https://docs.netlify.com/cli/get-started/#obtain-a-token-in-the-netlify-ui) (through the `NETLIFY_AUTH_TOKEN` environment variable) or login via `./bin/run login` before running the tests.
+
+Running these tests won't result in any charges towards your Netlify account because they build a site locally and then deploy it.
+
+> We don't recommend doing this, but you can disable these tests by setting the `NETLIFY_TEST_DISABLE_LIVE` environment variable to `true`.
 
 In watch mode:
 
@@ -63,7 +69,7 @@ To run the CLI locally:
 The CLI is written using the [oclif](https://oclif.io/) cli framework and the [netlify/js-client](https://github.com/netlify/js-client) open-api derived API client.
 
 - Commands live in the [`src/commands`](src/commands) folder.
-- The base command class which provides consistent config loading and an API client lives in [`src/base`](src/base).
+- The base command class which provides consistent config loading and an API client lives in [`src/utils/command.js`](src/utils/command.js).
 - Small utilities and other functionality live in [`src/utils`](src/utils).
 
 A good place to start is reading the base command README and looking at the commands folder.
@@ -74,7 +80,7 @@ This repo uses [ava](https://github.com/avajs/ava) for testing. Any files in the
 
 We also test for a few other things:
 
-- Dependencies (used an unused)
+- Dependencies (used and unused)
 - Linting
 - Test coverage
 - Must work with Windows + Unix environments.

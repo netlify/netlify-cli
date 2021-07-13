@@ -62,7 +62,8 @@ jobs:
         env:
           # GitHub secrets are not available when running on PR from forks
           # We set a flag so we can skip tests that access Netlify API
-          IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
+          NETLIFY_TEST_DISABLE_LIVE:
+            ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           # NETLIFY_TEST_GITHUB_TOKEN is used to avoid reaching GitHub API limits in exec-fetcher.js
           NETLIFY_TEST_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
