@@ -78,6 +78,7 @@
     "@netlify/build": "^15.11.2",
     "@netlify/config": "^12.6.0",
     "@netlify/framework-info": "^5.7.2",
+    "@netlify/local-functions-proxy": "^0.1.0",
     "@netlify/plugin-edge-handlers": "^1.11.21",
     "@netlify/plugins-list": "^2.19.1",
     "@netlify/routing-local-proxy": "^0.30.2",

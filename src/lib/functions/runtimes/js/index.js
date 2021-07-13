@@ -55,7 +55,7 @@ const invokeFunction = async ({ context, event, func, timeout }) => {
   // Otherwise, we'll invoke the function's main file.
   const lambdaPath = (func.buildData && func.buildData.buildPath) || func.mainFile
   const result = await lambdaLocal.execute({
-    clientContext: context,
+    clientContext: JSON.stringify(context),
     event,
     lambdaPath,
     timeoutMs: timeout * SECONDS_TO_MILLISECONDS,

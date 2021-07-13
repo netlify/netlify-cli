@@ -1,3 +1,4 @@
+const go = require('./go')
 const js = require('./js')
 
 /**
@@ -32,6 +33,6 @@ const js = require('./js')
  * @property {string} name
  */
 
-const runtimes = [js].reduce((res, runtime) => ({ ...res, [runtime.name]: runtime }), {})
+const runtimes = [js, go].reduce((res, runtime) => ({ ...res, [runtime.name]: runtime }), {})
 
 module.exports = runtimes
