@@ -7,10 +7,12 @@ const { get } = require('dot-prop')
 const inquirer = require('inquirer')
 const isObject = require('lodash/isObject')
 const prettyjson = require('prettyjson')
+const { parse: loadToml } = require('toml')
+const tomlify = require('tomlify-j0.4')
 
 const { cancelDeploy } = require('../lib/api')
 const { getBuildOptions, runBuild } = require('../lib/build')
-const { statAsync } = require('../lib/fs')
+const { statAsync, renameAsyncNoError, writeFileAsync, readFileAsync, rmFileAsync } = require('../lib/fs')
 const { normalizeFunctionsConfig } = require('../lib/functions/config')
 const { getLogMessage } = require('../lib/log')
 const { startSpinner, stopSpinner } = require('../lib/spinner')
@@ -358,6 +360,26 @@ const printResults = ({ flags, results, deployToProduction, log, logJson, exit }
   }
 }
 
+const hideRedirects = async (deployFolder) => {
+  await renameAsyncNoError(`${deployFolder}/_redirects`, `${deployFolder}/.redirects`)
+}
+
+const unhideRedirects = async (deployFolder) => {
+  await renameAsyncNoError(`${deployFolder}/.redirects`, `${deployFolder}/_redirects`)
+}
+
+const syncRedirects = async ({ oldConfig, newConfig, deployFolder, configPath }) => {
+  if (oldConfig.redirects === newConfig.redirects) {
+    return { synced: false }
+  }
+
+  const currentConfig = configPath ? loadToml(await readFileAsync(configPath)) : {}
+  const withRedirects = { ...currentConfig, redirects: newConfig.redirects }
+  const newConfigPath = `${deployFolder}/netlify.toml`
+  await writeFileAsync(newConfigPath, tomlify.toToml(withRedirects, { space: 2 }))
+  return { synced: true, newConfigPath }
+}
+
 class DeployCommand extends Command {
   async run() {
     const { flags } = this.parse(DeployCommand)
@@ -443,6 +465,17 @@ class DeployCommand extends Command {
       log,
     })
     const functionsConfig = normalizeFunctionsConfig({ functionsConfig: config.functions, projectRoot: site.root })
+
+    const { synced: redirectsSynced, newConfigPath } = await syncRedirects({
+      oldConfig: this.netlify.config,
+      newConfig: config,
+      deployFolder,
+      configPath,
+    })
+    if (redirectsSynced) {
+      await hideRedirects(deployFolder)
+    }
+
     const results = await runDeploy({
       flags,
       deployToProduction,
@@ -452,7 +485,9 @@ class DeployCommand extends Command {
       siteId,
       deployFolder,
       functionsConfig,
-      configPath,
+      // We persist a new netlify.toml file under deployFolder so we don't need to set a configPath
+      // as it will be picked up from the deployFolder
+      configPath: redirectsSynced ? null : configPath,
       // pass undefined functionsFolder if doesn't exist
       functionsFolder: functionsFolderStat && functionsFolder,
       alias,
@@ -461,6 +496,10 @@ class DeployCommand extends Command {
       error,
       exit,
     })
+
+    if (redirectsSynced) {
+      await Promise.all([unhideRedirects(deployFolder), rmFileAsync(newConfigPath)])
+    }
 
     printResults({ flags, results, deployToProduction, log, logJson, exit })
 
