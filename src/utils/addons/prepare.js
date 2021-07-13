@@ -1,11 +1,13 @@
 const chalk = require('chalk')
 
+const { log } = require('../command-helpers')
+
 const ADDON_VALIDATION = {
   EXISTS: 'EXISTS',
   NOT_EXISTS: 'NOT_EXISTS',
 }
 
-const validateExists = ({ addon, addonName, siteData, log, exit }) => {
+const validateExists = ({ addon, addonName, siteData, exit }) => {
   if (!addon || !addon.id) {
     log(`Add-on ${addonName} doesn't exist for ${siteData.name}`)
     log(`> Run \`netlify addons:create ${addonName}\` to create an instance for this site`)
@@ -13,7 +15,7 @@ const validateExists = ({ addon, addonName, siteData, log, exit }) => {
   }
 }
 
-const validateNotExists = ({ addon, addonName, siteData, log, exit }) => {
+const validateNotExists = ({ addon, addonName, siteData, exit }) => {
   if (addon && addon.id) {
     log(`The "${addonName} add-on" already exists for ${siteData.name}`)
     log()
@@ -28,14 +30,14 @@ const validateNotExists = ({ addon, addonName, siteData, log, exit }) => {
 
 const getCurrentAddon = ({ addons, addonName }) => addons.find((addon) => addon.service_slug === addonName)
 
-const validateCurrentAddon = ({ addon, validation, addonName, siteData, log, warn, exit }) => {
+const validateCurrentAddon = ({ addon, validation, addonName, siteData, warn, exit }) => {
   switch (validation) {
     case ADDON_VALIDATION.EXISTS: {
-      validateExists({ addon, addonName, siteData, log, exit })
+      validateExists({ addon, addonName, siteData, exit })
       break
     }
     case ADDON_VALIDATION.NOT_EXISTS: {
-      validateNotExists({ addon, addonName, siteData, log, exit })
+      validateNotExists({ addon, addonName, siteData, exit })
       break
     }
     default: {
@@ -80,7 +82,7 @@ const getAddons = async ({ api, siteId, error }) => {
 }
 
 const prepareAddonCommand = async ({ context, addonName, validation }) => {
-  const { netlify, log, warn, error, exit } = context
+  const { netlify, warn, error, exit } = context
   const { api, site } = netlify
   const siteId = site.id
   if (!siteId) {
@@ -98,7 +100,7 @@ const prepareAddonCommand = async ({ context, addonName, validation }) => {
   let addon
   if (addonName) {
     addon = getCurrentAddon({ addons, addonName })
-    validateCurrentAddon({ addon, validation, addonName, siteData, log, warn, exit })
+    validateCurrentAddon({ addon, validation, addonName, siteData, warn, exit })
   }
 
   return { manifest, addons, addon, siteData }

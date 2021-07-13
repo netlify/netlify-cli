@@ -4,6 +4,7 @@ const { flags: flagsLib } = require('@oclif/command')
 const AsciiTable = require('ascii-table')
 
 const Command = require('../../utils/command')
+const { log, logJson } = require('../../utils/command-helpers')
 const { getFunctionsDir } = require('../../utils/functions')
 const { getFunctions } = require('../../utils/get-functions')
 
@@ -41,9 +42,9 @@ class FunctionsListCommand extends Command {
     const functionsDir = getFunctionsDir({ flags, config })
 
     if (typeof functionsDir === 'undefined') {
-      this.log('Functions directory is undefined')
-      this.log('Please verify functions.directory is set in your Netlify configuration file (netlify.toml/yml/json)')
-      this.log('See https://docs.netlify.com/configure-builds/file-based-configuration/ for more information')
+      log('Functions directory is undefined')
+      log('Please verify functions.directory is set in your Netlify configuration file (netlify.toml/yml/json)')
+      log('See https://docs.netlify.com/configure-builds/file-based-configuration/ for more information')
       process.exit(1)
     }
 
@@ -51,23 +52,23 @@ class FunctionsListCommand extends Command {
     const normalizedFunctions = functions.map(normalizeFunction.bind(null, deployedFunctions))
 
     if (normalizedFunctions.length === 0) {
-      this.log(`No functions found in ${functionsDir}`)
+      log(`No functions found in ${functionsDir}`)
       this.exit()
     }
 
     if (flags.json) {
-      this.logJson(normalizedFunctions)
+      logJson(normalizedFunctions)
       this.exit()
     }
 
     // Make table
-    this.log(`Based on local functions folder ${functionsDir}, these are the functions detected`)
+    log(`Based on local functions folder ${functionsDir}, these are the functions detected`)
     const table = new AsciiTable(`Netlify Functions (in local functions folder)`)
     table.setHeading('Name', 'URL', 'deployed')
     normalizedFunctions.forEach(({ name, url, isDeployed }) => {
       table.addRow(name, url, isDeployed ? 'yes' : 'no')
     })
-    this.log(table.toString())
+    log(table.toString())
   }
 }
 

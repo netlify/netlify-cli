@@ -1,4 +1,5 @@
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const openBrowser = require('../../utils/open-browser')
 
 class OpenAdminCommand extends Command {
@@ -19,8 +20,8 @@ Run \`netlify link\` to connect to this folder to a site`)
     try {
       siteData = await api.getSite({ siteId })
       url = siteData.ssl_url || siteData.url
-      this.log(`Opening "${siteData.name}" site url:`)
-      this.log(`> ${url}`)
+      log(`Opening "${siteData.name}" site url:`)
+      log(`> ${url}`)
     } catch (error) {
       // unauthorized
       if (error.status === 401) {
@@ -30,7 +31,7 @@ Run \`netlify link\` to connect to this folder to a site`)
       this.error(error)
     }
 
-    await openBrowser({ url, log: this.log })
+    await openBrowser({ url })
     this.exit()
   }
 }

@@ -20,7 +20,7 @@ class IdentityAPI {
     }
   }
 
-  async parseJsonResponse(response) {
+  static async parseJsonResponse(response) {
     const json = await response.json()
     if (!response.ok) {
       const error = `JSON: ${JSON.stringify(json)}. Status: ${response.status}`
@@ -34,7 +34,7 @@ class IdentityAPI {
     const response = await fetch(this.apiURL + path, { ...options, headers })
     const contentType = response.headers.get('Content-Type')
     if (contentType && /json/.test(contentType)) {
-      return this.parseJsonResponse(response)
+      return IdentityAPI.parseJsonResponse(response)
     }
 
     if (!response.ok) {

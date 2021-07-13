@@ -39,11 +39,9 @@ const packages = [
 ]
 
 packages.forEach(({ packageName, execName, execArgs, pattern, extension }) => {
-  const { log } = console
-
   test(`${packageName} - should return true on empty directory`, async (t) => {
     const { binPath } = t.context
-    const actual = await shouldFetchLatestVersion({ binPath, packageName, execName, execArgs, pattern, log })
+    const actual = await shouldFetchLatestVersion({ binPath, packageName, execName, execArgs, pattern })
     t.is(actual, true)
   })
 
@@ -52,7 +50,7 @@ packages.forEach(({ packageName, execName, execArgs, pattern, extension }) => {
 
     await fetchLatestVersion({ packageName, execName, destination: binPath, extension })
 
-    const actual = await shouldFetchLatestVersion({ binPath, packageName, execName, execArgs, pattern, log })
+    const actual = await shouldFetchLatestVersion({ binPath, packageName, execName, execArgs, pattern })
     t.is(actual, false)
   })
 

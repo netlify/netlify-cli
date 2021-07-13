@@ -5,6 +5,7 @@ const execa = require('execa')
 const { fetchVersion, fetchLatest, updateAvailable, newerVersion } = require('gh-release-fetch')
 const isExe = require('isexe')
 
+const { log } = require('../utils/command-helpers')
 const { NETLIFYDEVWARN } = require('../utils/logo')
 
 const isWindows = () => process.platform === 'win32'
@@ -32,7 +33,7 @@ const isVersionOutdated = async ({ packageName, currentVersion, latestVersion })
   return outdated
 }
 
-const shouldFetchLatestVersion = async ({ binPath, packageName, execName, execArgs, pattern, latestVersion, log }) => {
+const shouldFetchLatestVersion = async ({ binPath, packageName, execName, execArgs, pattern, latestVersion }) => {
   const execPath = path.join(binPath, getExecName({ execName }))
 
   const exists = await isExe(execPath, { ignoreErrors: true })

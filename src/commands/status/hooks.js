@@ -2,10 +2,12 @@ const { get } = require('dot-prop')
 const prettyjson = require('prettyjson')
 
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 
 class StatusHooksCommand extends Command {
   async run() {
     const { site, api } = this.netlify
+
     await this.authenticate()
 
     const siteId = site.id
@@ -46,10 +48,10 @@ class StatusHooksCommand extends Command {
         data.hooks[hook.id].repo_url = get(siteData, 'build_settings.repo_url')
       }
     })
-    this.log(`─────────────────┐
+    log(`─────────────────┐
 Site Hook Status │
 ─────────────────┘`)
-    this.log(prettyjson.render(data))
+    log(prettyjson.render(data))
   }
 }
 

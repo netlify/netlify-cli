@@ -10,9 +10,9 @@ class ExecCommand extends Command {
   }
 
   async run() {
-    const { log, warn, netlify } = this
+    const { warn, netlify } = this
     const { cachedConfig, site } = netlify
-    await injectEnvVariables({ env: cachedConfig.env, log, site, warn })
+    await injectEnvVariables({ env: cachedConfig.env, site, warn })
 
     execa(this.argv[0], this.argv.slice(1), {
       stdio: 'inherit',

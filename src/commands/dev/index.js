@@ -12,6 +12,7 @@ const waitPort = require('wait-port')
 
 const { startFunctionsServer } = require('../../lib/functions/server')
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const { detectServerSettings } = require('../../utils/detect-server-settings')
 const { getSiteInformation, injectEnvVariables } = require('../../utils/dev')
 const { startLiveTunnel } = require('../../utils/live-tunnel')
@@ -20,7 +21,7 @@ const openBrowser = require('../../utils/open-browser')
 const { startProxy } = require('../../utils/proxy')
 const { startForwardProxy } = require('../../utils/traffic-mesh')
 
-const startStaticServer = async ({ settings, log }) => {
+const startStaticServer = async ({ settings }) => {
   const server = new StaticServer({
     rootPath: settings.dist,
     name: 'netlify-dev',
@@ -52,9 +53,9 @@ const isNonExistingCommandError = ({ command, error }) => {
   )
 }
 
-const startFrameworkServer = async function ({ settings, log, exit }) {
+const startFrameworkServer = async function ({ settings, exit }) {
   if (settings.useStaticServer) {
-    return await startStaticServer({ settings, log })
+    return await startStaticServer({ settings })
   }
 
   log(`${NETLIFYDEVLOG} Starting Netlify Dev with ${settings.framework || 'custom config'}`)
@@ -114,7 +115,7 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
 // 10 minutes
 const FRAMEWORK_PORT_TIMEOUT = 6e5
 
-const startProxyServer = async ({ flags, settings, site, log, exit, addonsUrls }) => {
+const startProxyServer = async ({ flags, settings, site, exit, addonsUrls }) => {
   let url
   if (flags.edgeHandlers || flags.trafficMesh) {
     url = await startForwardProxy({
@@ -122,7 +123,6 @@ const startProxyServer = async ({ flags, settings, site, log, exit, addonsUrls }
       frameworkPort: settings.frameworkPort,
       functionsPort: settings.functionsPort,
       publishDir: settings.dist,
-      log,
       debug: flags.debug,
       locationDb: flags.locationDb,
       jwtRolesPath: settings.jwtRolePath,
@@ -142,20 +142,19 @@ const startProxyServer = async ({ flags, settings, site, log, exit, addonsUrls }
   return url
 }
 
-const handleLiveTunnel = async ({ flags, site, api, settings, log }) => {
+const handleLiveTunnel = async ({ flags, site, api, settings }) => {
   if (flags.live) {
     const sessionUrl = await startLiveTunnel({
       siteId: site.id,
       netlifyApiToken: api.accessToken,
       localPort: settings.port,
-      log,
     })
     process.env.BASE_URL = sessionUrl
     return sessionUrl
   }
 }
 
-const printBanner = ({ url, log }) => {
+const printBanner = ({ url }) => {
   const banner = chalk.bold(`${NETLIFYDEVLOG} Server now ready on ${url}`)
 
   log(
@@ -175,8 +174,8 @@ class DevCommand extends Command {
   }
 
   async run() {
-    this.log(`${NETLIFYDEV}`)
-    const { error: errorExit, log, warn, exit } = this
+    log(`${NETLIFYDEV}`)
+    const { error: errorExit, warn, exit } = this
     const { flags } = this.parse(DevCommand)
     const { api, site, config, siteInfo } = this.netlify
     config.dev = { ...config.dev }
@@ -195,8 +194,7 @@ class DevCommand extends Command {
       )
     }
 
-    await injectEnvVariables({ env: this.netlify.cachedConfig.env, log, site, warn })
-
+    await injectEnvVariables({ env: this.netlify.cachedConfig.env, site, warn })
     const { addonsUrls, siteUrl, capabilities, timeouts } = await getSiteInformation({
       flags,
       api,
@@ -208,7 +206,7 @@ class DevCommand extends Command {
 
     let settings = {}
     try {
-      settings = await detectServerSettings(devConfig, flags, site.root, log)
+      settings = await detectServerSettings(devConfig, flags, site.root)
     } catch (error) {
       log(NETLIFYDEVERR, error.message)
       exit(1)
@@ -220,28 +218,27 @@ class DevCommand extends Command {
       config,
       settings,
       site,
-      log,
       warn,
       errorExit,
       siteUrl,
       capabilities,
       timeouts,
     })
-    await startFrameworkServer({ settings, log, exit })
+    await startFrameworkServer({ settings, exit })
 
-    let url = await startProxyServer({ flags, settings, site, log, exit, addonsUrls })
+    let url = await startProxyServer({ flags, settings, site, exit, addonsUrls })
 
-    const liveTunnelUrl = await handleLiveTunnel({ flags, site, api, settings, log })
+    const liveTunnelUrl = await handleLiveTunnel({ flags, site, api, settings })
     url = liveTunnelUrl || url
 
     if (devConfig.autoLaunch !== false) {
-      await openBrowser({ url, log, silentBrowserNoneError: true })
+      await openBrowser({ url, silentBrowserNoneError: true })
     }
 
     process.env.URL = url
     process.env.DEPLOY_URL = url
 
-    printBanner({ url, log })
+    printBanner({ url })
   }
 }
 

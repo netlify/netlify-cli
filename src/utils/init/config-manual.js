@@ -1,8 +1,10 @@
 const inquirer = require('inquirer')
 
+const { log } = require('../command-helpers')
+
 const { getBuildSettings, saveNetlifyToml, createDeployKey, setupSite } = require('./utils')
 
-const addDeployKey = async ({ log, exit, deployKey }) => {
+const addDeployKey = async ({ exit, deployKey }) => {
   log('\nGive this Netlify SSH public key access to your repository:\n')
   log(`\n${deployKey.public_key}\n\n`)
 
@@ -34,7 +36,7 @@ const getRepoPath = async ({ repoData }) => {
   return repoPath
 }
 
-const addDeployHook = async ({ log, deployHook }) => {
+const addDeployHook = async ({ deployHook }) => {
   log('\nConfigure the following webhook for your repository:\n')
   log(`\n${deployHook}\n\n`)
   const { deployHookAdded } = await inquirer.prompt([
@@ -50,7 +52,7 @@ const addDeployHook = async ({ log, deployHook }) => {
 }
 
 module.exports = async function configManual({ context, siteId, repoData }) {
-  const { log, warn, error: failAndExit, exit, netlify } = context
+  const { warn, error: failAndExit, exit, netlify } = context
   const {
     api,
     config,
@@ -69,7 +71,7 @@ module.exports = async function configManual({ context, siteId, repoData }) {
   await saveNetlifyToml({ repositoryRoot, config, configPath, baseDir, buildCmd, buildDir, functionsDir, warn })
 
   const deployKey = await createDeployKey({ api, failAndExit })
-  await addDeployKey({ log, exit, deployKey })
+  await addDeployKey({ exit, deployKey })
 
   const repoPath = await getRepoPath({ repoData })
   const repo = {
@@ -92,7 +94,7 @@ module.exports = async function configManual({ context, siteId, repoData }) {
     configPlugins: config.plugins,
     pluginsToInstall,
   })
-  const deployHookAdded = await addDeployHook({ log, deployHook: updatedSite.deploy_hook })
+  const deployHookAdded = await addDeployHook({ deployHook: updatedSite.deploy_hook })
   if (!deployHookAdded) {
     exit()
   }

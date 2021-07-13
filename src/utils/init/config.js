@@ -1,9 +1,11 @@
 const chalk = require('chalk')
 
+const { log } = require('../command-helpers')
+
 const configGithub = require('./config-github')
 const configManual = require('./config-manual')
 
-const logSuccess = ({ log, repoData }) => {
+const logSuccess = (repoData) => {
   log()
   log(chalk.greenBright.bold.underline(`Success! Netlify CI/CD Configured!`))
   log()
@@ -22,10 +24,10 @@ const configureRepo = async ({ context, siteId, repoData, manual }) => {
   } else if (repoData.provider === 'github') {
     await configGithub({ context, siteId, repoName: repoData.name, repoOwner: repoData.owner })
   } else {
-    context.log(`No configurator found for the provided git remote. Configuring manually...`)
+    log(`No configurator found for the provided git remote. Configuring manually...`)
     await configManual({ context, siteId, repoData })
   }
 
-  logSuccess({ log: context.log, repoData })
+  logSuccess(repoData)
 }
 module.exports = { configureRepo }

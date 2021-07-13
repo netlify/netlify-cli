@@ -3,6 +3,7 @@ const inquirer = require('inquirer')
 
 const { prepareAddonCommand, ADDON_VALIDATION } = require('../../utils/addons/prepare')
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const { parseRawFlags } = require('../../utils/parse-raw-flags')
 
 class AddonsDeleteCommand extends Command {
@@ -35,7 +36,7 @@ class AddonsDeleteCommand extends Command {
         addon: addonName,
         instanceId: addon.id,
       })
-      this.log(`Addon "${addonName}" deleted`)
+      log(`Addon "${addonName}" deleted`)
     } catch (error) {
       this.error(error.message)
     }

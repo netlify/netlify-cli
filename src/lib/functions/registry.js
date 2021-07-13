@@ -1,5 +1,6 @@
 const chalk = require('chalk')
 
+const { log } = require('../../utils/command-helpers')
 const { NETLIFYDEVLOG, NETLIFYDEVERR } = require('../../utils/logo')
 const { mkdirRecursiveAsync } = require('../fs')
 const { getLogMessage } = require('../log')
@@ -9,7 +10,7 @@ const runtimes = require('./runtimes')
 const { watchDebounced } = require('./watcher')
 
 class FunctionsRegistry {
-  constructor({ capabilities, config, errorExit, functionsDirectory, log, projectRoot, timeouts, warn }) {
+  constructor({ capabilities, config, errorExit, functionsDirectory, projectRoot, timeouts, warn }) {
     this.capabilities = capabilities
     this.config = config
     this.errorExit = errorExit

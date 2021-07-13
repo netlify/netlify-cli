@@ -9,6 +9,7 @@ const generatePrompts = require('../../utils/addons/prompts')
 const render = require('../../utils/addons/render')
 const { requiredConfigValues, missingConfigValues, updateConfigValues } = require('../../utils/addons/validation')
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const { parseRawFlags } = require('../../utils/parse-raw-flags')
 
 class AddonsConfigCommand extends Command {
@@ -33,7 +34,7 @@ class AddonsConfigCommand extends Command {
     const currentConfig = addon.config || {}
 
     const words = `Current "${addonName} add-on" Settings:`
-    this.log(` ${chalk.yellowBright.bold(words)}`)
+    log(` ${chalk.yellowBright.bold(words)}`)
     if (hasConfig) {
       if (!rawFlags.silent) {
         render.configValues(addonName, manifest.config, currentConfig)
@@ -41,7 +42,7 @@ class AddonsConfigCommand extends Command {
     } else {
       // For addons without manifest. TODO remove once we enfore manifests
       Object.keys(currentConfig).forEach((key) => {
-        this.log(`${key} - ${currentConfig[key]}`)
+        log(`${key} - ${currentConfig[key]}`)
       })
     }
 
@@ -61,7 +62,6 @@ class AddonsConfigCommand extends Command {
           instanceId: addon.id,
           api,
           error: this.error,
-          log: this.log,
         })
         return false
       }
@@ -75,16 +75,16 @@ class AddonsConfigCommand extends Command {
         },
       ])
       if (!updatePrompt.updateNow) {
-        this.log('Sounds good! Exiting configuration...')
+        log('Sounds good! Exiting configuration...')
         return false
       }
-      this.log()
-      this.log(` - Hit ${chalk.white.bold('enter')} to keep the existing value in (parentheses)`)
-      this.log(` - Hit ${chalk.white.bold('down arrow')} to remove the value`)
-      this.log(` - Hit ${chalk.white.bold('ctrl + C')} to cancel & exit configuration`)
-      this.log()
-      this.log(` You will need to verify the changed before we push them to your live site!`)
-      this.log()
+      log()
+      log(` - Hit ${chalk.white.bold('enter')} to keep the existing value in (parentheses)`)
+      log(` - Hit ${chalk.white.bold('down arrow')} to remove the value`)
+      log(` - Hit ${chalk.white.bold('ctrl + C')} to cancel & exit configuration`)
+      log()
+      log(` You will need to verify the changed before we push them to your live site!`)
+      log()
       const prompts = generatePrompts({
         config: manifest.config,
         configValues: currentConfig,
@@ -94,20 +94,20 @@ class AddonsConfigCommand extends Command {
       const newConfig = updateConfigValues(manifest.config, currentConfig, userInput)
 
       const diffs = compare(currentConfig, newConfig)
-      // this.log('compare', diffs)
+      // log('compare', diffs)
       if (diffs.isEqual) {
-        this.log(`No changes. exiting early`)
+        log(`No changes. exiting early`)
         return false
       }
-      this.log()
-      this.log(`${chalk.yellowBright.bold.underline('Confirm your updates:')}`)
-      this.log()
+      log()
+      log(`${chalk.yellowBright.bold.underline('Confirm your updates:')}`)
+      log()
       diffs.keys.forEach((key) => {
         const { newValue, oldValue } = diffs.diffs[key]
         const oldVal = oldValue || 'NO VALUE'
-        this.log(`${chalk.cyan(key)} changed from ${chalk.whiteBright(oldVal)} to ${chalk.green(newValue)}`)
+        log(`${chalk.cyan(key)} changed from ${chalk.whiteBright(oldVal)} to ${chalk.green(newValue)}`)
       })
-      this.log()
+      log()
 
       const confirmPrompt = await inquirer.prompt([
         {
@@ -121,7 +121,7 @@ class AddonsConfigCommand extends Command {
       ])
 
       if (!confirmPrompt.confirmChange) {
-        this.log('Canceling changes... You are good to go!')
+        log('Canceling changes... You are good to go!')
         return false
       }
 
@@ -133,13 +133,12 @@ class AddonsConfigCommand extends Command {
         instanceId: addon.id,
         api,
         error: this.error,
-        log: this.log,
       })
     }
   }
 }
 
-const update = async function ({ addonName, currentConfig, newConfig, siteId, instanceId, api, error, log }) {
+const update = async function ({ addonName, currentConfig, newConfig, siteId, instanceId, api, error }) {
   const codeDiff = diffValues(currentConfig, newConfig)
   if (!codeDiff) {
     log('No changes, exiting early')

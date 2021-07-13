@@ -3,6 +3,7 @@ const chalk = require('chalk')
 const inquirer = require('inquirer')
 
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const { parseRawFlags } = require('../../utils/parse-raw-flags')
 
 class SitesDeleteCommand extends Command {
@@ -36,19 +37,19 @@ class SitesDeleteCommand extends Command {
 
     /* Verify the user wants to delete the site */
     if (noForce) {
-      this.log(`${chalk.redBright('Warning')}: You are about to permanently delete "${chalk.bold(siteData.name)}"`)
-      this.log(`         Verify this siteID "${siteId}" supplied is correct and proceed.`)
-      this.log('         To skip this prompt, pass a --force flag to the delete command')
-      this.log()
-      this.log(`${chalk.bold('Be careful here. There is no undo!')}`)
-      this.log()
+      log(`${chalk.redBright('Warning')}: You are about to permanently delete "${chalk.bold(siteData.name)}"`)
+      log(`         Verify this siteID "${siteId}" supplied is correct and proceed.`)
+      log('         To skip this prompt, pass a --force flag to the delete command')
+      log()
+      log(`${chalk.bold('Be careful here. There is no undo!')}`)
+      log()
       const { wantsToDelete } = await inquirer.prompt({
         type: 'confirm',
         name: 'wantsToDelete',
         message: `WARNING: Are you sure you want to delete the "${siteData.name}" site?`,
         default: false,
       })
-      this.log()
+      log()
       if (!wantsToDelete) {
         this.exit()
       }
@@ -56,13 +57,13 @@ class SitesDeleteCommand extends Command {
 
     /* Validation logic if siteId passed in does not match current site ID */
     if (noForce && cwdSiteId && cwdSiteId !== siteId) {
-      this.log(`${chalk.redBright('Warning')}: The siteId supplied does not match the current working directory siteId`)
-      this.log()
-      this.log(`Supplied:       "${siteId}"`)
-      this.log(`Current Site:   "${cwdSiteId}"`)
-      this.log()
-      this.log(`Verify this siteID "${siteId}" supplied is correct and proceed.`)
-      this.log('To skip this prompt, pass a --force flag to the delete command')
+      log(`${chalk.redBright('Warning')}: The siteId supplied does not match the current working directory siteId`)
+      log()
+      log(`Supplied:       "${siteId}"`)
+      log(`Current Site:   "${cwdSiteId}"`)
+      log()
+      log(`Verify this siteID "${siteId}" supplied is correct and proceed.`)
+      log('To skip this prompt, pass a --force flag to the delete command')
       const { wantsToDelete } = await inquirer.prompt({
         type: 'confirm',
         name: 'wantsToDelete',
@@ -74,7 +75,7 @@ class SitesDeleteCommand extends Command {
       }
     }
 
-    this.log(`Deleting site "${siteId}"...`)
+    log(`Deleting site "${siteId}"...`)
 
     try {
       await api.deleteSite({ site_id: siteId })
@@ -85,7 +86,7 @@ class SitesDeleteCommand extends Command {
         this.error(`Delete Site error: ${error.status}: ${error.message}`)
       }
     }
-    this.log(`Site "${siteId}" successfully deleted!`)
+    log(`Site "${siteId}" successfully deleted!`)
   }
 }
 

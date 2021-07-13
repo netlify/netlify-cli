@@ -7,6 +7,7 @@ const { Octokit } = require('@octokit/rest')
 const getPort = require('get-port')
 const inquirer = require('inquirer')
 
+const { log } = require('./command-helpers')
 const { createDeferred } = require('./deferred')
 const openBrowser = require('./open-browser')
 
@@ -31,7 +32,7 @@ const promptForAuthMethod = async () => {
   return authMethod === authChoiceNetlify
 }
 
-const authWithNetlify = async ({ log }) => {
+const authWithNetlify = async () => {
   const port = await getPort({ port: SERVER_PORT })
   const { promise: deferredPromise, reject: deferredReject, resolve: deferredResolve } = createDeferred()
 
@@ -64,7 +65,7 @@ const authWithNetlify = async ({ log }) => {
     provider: 'github',
   })}`
 
-  await openBrowser({ url, log })
+  await openBrowser({ url })
 
   return deferredPromise
 }
@@ -95,12 +96,12 @@ const authWithToken = async () => {
   throw error
 }
 
-module.exports = async function getGitHubToken({ log }) {
+module.exports = async function getGitHubToken() {
   log('')
 
   const withNetlify = await promptForAuthMethod()
   if (withNetlify) {
-    return await authWithNetlify({ log })
+    return await authWithNetlify()
   }
 
   return await authWithToken()

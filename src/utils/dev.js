@@ -8,6 +8,7 @@ const isEmpty = require('lodash/isEmpty')
 
 const { supportsBackgroundFunctions } = require('../lib/account')
 
+const { log } = require('./command-helpers')
 const { loadDotEnvFiles } = require('./dot-env')
 const { NETLIFYDEVLOG } = require('./logo')
 
@@ -131,7 +132,7 @@ const getEnvSourceName = (source) => {
 
 // Takes a set of environment variables in the format provided by @netlify/config, augments it with variables from both
 // dot-env files and the process itself, and injects into `process.env`.
-const injectEnvVariables = async ({ env, log, site, warn }) => {
+const injectEnvVariables = async ({ env, site, warn }) => {
   const environment = new Map(Object.entries(env))
   const dotEnvFiles = await loadDotEnvFiles({ projectDir: site.root, warn })
 

@@ -8,7 +8,9 @@ const gitconfiglocal = require('gitconfiglocal')
 const isEmpty = require('lodash/isEmpty')
 const parseGitRemote = require('parse-github-url')
 
-const getRepoData = async function ({ log, remoteName }) {
+const { log } = require('./command-helpers')
+
+const getRepoData = async function ({ remoteName }) {
   try {
     const cwd = process.cwd()
     const [gitConfig, gitDirectory] = await Promise.all([

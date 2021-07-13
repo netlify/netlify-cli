@@ -5,6 +5,7 @@ const inquirer = require('inquirer')
 const isEmpty = require('lodash/isEmpty')
 
 const { listSites } = require('../../lib/api')
+const { log } = require('../command-helpers')
 const { getRepoData } = require('../get-repo-data')
 const { track } = require('../telemetry')
 
@@ -18,7 +19,7 @@ module.exports = async function linkPrompts(context, flags = {}) {
   let GIT_REMOTE_PROMPT = 'Use the current git remote origin URL'
   let site
   // Get git remote data if exists
-  const repoData = await getRepoData({ log: context.log, remoteName: flags.gitRemoteName })
+  const repoData = await getRepoData({ remoteName: flags.gitRemoteName })
 
   let linkChoices = [SITE_NAME_PROMPT, SITE_LIST_PROMPT, SITE_ID_PROMPT]
 
@@ -28,9 +29,9 @@ module.exports = async function linkPrompts(context, flags = {}) {
     linkChoices = [GIT_REMOTE_PROMPT, ...linkChoices]
   }
 
-  context.log()
-  context.log(`${chalk.cyanBright('netlify link')} will connect this folder to a site on Netlify`)
-  context.log()
+  log()
+  log(`${chalk.cyanBright('netlify link')} will connect this folder to a site on Netlify`)
+  log()
   const { linkType } = await inquirer.prompt([
     {
       type: 'list',
@@ -44,9 +45,9 @@ module.exports = async function linkPrompts(context, flags = {}) {
   switch (linkType) {
     case GIT_REMOTE_PROMPT: {
       kind = 'gitRemote'
-      context.log()
-      context.log(`Looking for sites connected to '${repoData.httpsUrl}'...`)
-      context.log()
+      log()
+      log(`Looking for sites connected to '${repoData.httpsUrl}'...`)
+      log()
       const sites = await listSites({ api, options: { filter: 'all' } })
 
       if (isEmpty(sites)) {
@@ -61,9 +62,9 @@ module.exports = async function linkPrompts(context, flags = {}) {
 
       // If no remote matches. Throw error
       if (isEmpty(matchingSites)) {
-        context.log(chalk.redBright.bold.underline(`No Matching Site Found`))
-        context.log()
-        context.log(`No site found with the remote ${repoData.httpsUrl}.
+        log(chalk.redBright.bold.underline(`No Matching Site Found`))
+        log()
+        log(`No site found with the remote ${repoData.httpsUrl}.
 
 Double check you are in the correct working directory and a remote origin repo is configured.
 
@@ -108,8 +109,8 @@ Run ${chalk.cyanBright('git remote -v')} to see a list of your git remotes.`)
           message: 'Enter the site name (or just part of it):',
         },
       ])
-      context.log(`Looking for sites with names containing '${searchTerm}'...`)
-      context.log()
+      log(`Looking for sites with names containing '${searchTerm}'...`)
+      log()
 
       let matchingSites
       try {
@@ -155,8 +156,8 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
     }
     case SITE_LIST_PROMPT: {
       kind = 'fromList'
-      context.log(`Fetching recently updated sites...`)
-      context.log()
+      log(`Fetching recently updated sites...`)
+      log()
 
       let sites
       try {
@@ -223,17 +224,17 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
   })
 
   // Log output
-  context.log()
-  context.log(chalk.greenBright.bold.underline(`Directory Linked`))
-  context.log()
-  context.log(`Admin url: ${chalk.magentaBright(site.admin_url)}`)
-  context.log(`Site url:  ${chalk.cyanBright(site.ssl_url || site.url)}`)
-  context.log()
+  log()
+  log(chalk.greenBright.bold.underline(`Directory Linked`))
+  log()
+  log(`Admin url: ${chalk.magentaBright(site.admin_url)}`)
+  log(`Site url:  ${chalk.cyanBright(site.ssl_url || site.url)}`)
+  log()
 
-  context.log(`Site id saved to ${path.join(context.netlify.site.root, '/.netlify/state.json')}`)
-  // context.log(`Local Config: .netlify/config.json`)
-  context.log()
-  context.log(`You can now run other \`netlify\` cli commands in this directory`)
+  log(`Site id saved to ${path.join(context.netlify.site.root, '/.netlify/state.json')}`)
+  // log(`Local Config: .netlify/config.json`)
+  log()
+  log(`You can now run other \`netlify\` cli commands in this directory`)
 
   return site
 }

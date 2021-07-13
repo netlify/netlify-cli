@@ -6,6 +6,7 @@ const chalk = require('chalk')
 
 const { listSites } = require('../lib/api')
 const Command = require('../utils/command')
+const { log } = require('../utils/command-helpers')
 const ensureNetlifyIgnore = require('../utils/gitignore')
 const linkPrompt = require('../utils/link/link-by-prompt')
 const { track } = require('../utils/telemetry')
@@ -41,10 +42,10 @@ class LinkCommand extends Command {
 
     // If already linked to site. exit and prompt for unlink
     if (siteData) {
-      this.log(`Site already linked to "${siteData.name}"`)
-      this.log(`Admin url: ${siteData.admin_url}`)
-      this.log()
-      this.log(`To unlink this site, run: ${chalk.cyanBright('netlify unlink')}`)
+      log(`Site already linked to "${siteData.name}"`)
+      log(`Admin url: ${siteData.admin_url}`)
+      log()
+      log(`To unlink this site, run: ${chalk.cyanBright('netlify unlink')}`)
       return this.exit()
     }
 
@@ -61,7 +62,7 @@ class LinkCommand extends Command {
 
       // Save site ID
       state.set('siteId', siteData.id)
-      this.log(`Linked to ${siteData.name} in ${state.path}`)
+      log(`Linked to ${siteData.name} in ${state.path}`)
 
       await track('sites_linked', {
         siteId: siteData.id,
@@ -96,7 +97,7 @@ class LinkCommand extends Command {
       const [firstSiteData] = results
       state.set('siteId', firstSiteData.id)
 
-      this.log(`Linked to ${firstSiteData.name} in ${path.relative(path.join(process.cwd(), '..'), state.path)}`)
+      log(`Linked to ${firstSiteData.name} in ${path.relative(path.join(process.cwd(), '..'), state.path)}`)
 
       await track('sites_linked', {
         siteId: (firstSiteData && firstSiteData.id) || siteId,

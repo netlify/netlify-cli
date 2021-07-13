@@ -13,7 +13,7 @@ class TraceCommand extends Command {
     this.parse(TraceCommand)
 
     const args = ['trace'].concat(this.argv)
-    const { subprocess } = runProcess({ log: this.log, args })
+    const { subprocess } = runProcess({ args })
     await subprocess
   }
 }

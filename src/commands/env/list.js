@@ -3,6 +3,7 @@ const AsciiTable = require('ascii-table')
 const isEmpty = require('lodash/isEmpty')
 
 const Command = require('../../utils/command')
+const { log, logJson } = require('../../utils/command-helpers')
 
 class EnvListCommand extends Command {
   async run() {
@@ -11,7 +12,7 @@ class EnvListCommand extends Command {
     const siteId = site.id
 
     if (!siteId) {
-      this.log('No site id found, please run inside a site folder or `netlify link`')
+      log('No site id found, please run inside a site folder or `netlify link`')
       return false
     }
 
@@ -25,22 +26,22 @@ class EnvListCommand extends Command {
 
     // Return json response for piping commands
     if (flags.json) {
-      this.logJson(environment)
+      logJson(environment)
       return false
     }
 
     if (isEmpty(environment)) {
-      this.log(`No environment variables set for site ${siteData.name}`)
+      log(`No environment variables set for site ${siteData.name}`)
       return false
     }
 
     // List environment variables using a table
-    this.log(`site: ${siteData.name}`)
+    log(`site: ${siteData.name}`)
     const table = new AsciiTable(`Environment variables`)
 
     table.setHeading('Key', 'Value')
     table.addRowMatrix(Object.entries(environment))
-    this.log(table.toString())
+    log(table.toString())
   }
 }
 

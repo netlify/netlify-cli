@@ -9,7 +9,7 @@ const {
 } = require('../../utils/lm/steps')
 
 class LmInfoCommand extends Command {
-  async run() {
+  static async run() {
     const steps = [
       checkGitVersionStep,
       checkGitLFSVersionStep,

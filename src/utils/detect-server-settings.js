@@ -10,6 +10,7 @@ const isPlainObject = require('is-plain-obj')
 
 const { readFileAsyncCatchError } = require('../lib/fs')
 
+const { log } = require('./command-helpers')
 const { acquirePort } = require('./dev')
 const { NETLIFYDEVWARN } = require('./logo')
 
@@ -92,14 +93,14 @@ const validateConfiguredPort = ({ devConfig, detectedPort }) => {
 const DEFAULT_PORT = 8888
 const DEFAULT_STATIC_PORT = 3999
 
-const getDefaultDist = ({ log }) => {
+const getDefaultDist = () => {
   log(`${NETLIFYDEVWARN} Unable to determine public folder to serve files from. Using current working directory`)
   log(`${NETLIFYDEVWARN} Setup a netlify.toml file with a [dev] section to specify your dev server settings.`)
   log(`${NETLIFYDEVWARN} See docs at: https://cli.netlify.com/netlify-dev#project-detection`)
   return process.cwd()
 }
 
-const handleStaticServer = async ({ flags, log, devConfig, projectDir }) => {
+const handleStaticServer = async ({ flags, devConfig, projectDir }) => {
   validateNumberProperty({ devConfig, property: 'staticServerPort' })
 
   if (flags.dir) {
@@ -128,7 +129,7 @@ const handleStaticServer = async ({ flags, log, devConfig, projectDir }) => {
     )
   }
 
-  const dist = flags.dir || devConfig.publish || getDefaultDist({ log })
+  const dist = flags.dir || devConfig.publish || getDefaultDist()
   log(`${NETLIFYDEVWARN} Running static server from "${path.relative(path.dirname(projectDir), dist)}"`)
 
   const frameworkPort = await acquirePort({
@@ -166,7 +167,7 @@ const getSettingsFromFramework = (framework) => {
   }
 }
 
-const detectFrameworkSettings = async ({ projectDir, log }) => {
+const detectFrameworkSettings = async ({ projectDir }) => {
   const frameworks = await listFrameworks({ projectDir })
 
   if (frameworks.length === 1) {
@@ -206,7 +207,7 @@ const detectFrameworkSettings = async ({ projectDir, log }) => {
 
 const hasCommandAndTargetPort = ({ devConfig }) => devConfig.command && devConfig.targetPort
 
-const handleCustomFramework = ({ devConfig, log }) => {
+const handleCustomFramework = ({ devConfig }) => {
   if (!hasCommandAndTargetPort({ devConfig })) {
     throw new Error(
       `${formatProperty('command')} and ${formatProperty('targetPort')} properties are required when ${formatProperty(
@@ -217,7 +218,7 @@ const handleCustomFramework = ({ devConfig, log }) => {
   return {
     command: devConfig.command,
     frameworkPort: devConfig.targetPort,
-    dist: devConfig.publish || getDefaultDist({ log }),
+    dist: devConfig.publish || getDefaultDist(),
     framework: '#custom',
     pollingStrategies: devConfig.pollingStrategies || [],
   }
@@ -238,31 +239,31 @@ const handleForcedFramework = async ({ devConfig, projectDir }) => {
   }
 }
 
-const detectServerSettings = async (devConfig, flags, projectDir, log) => {
+const detectServerSettings = async (devConfig, flags, projectDir) => {
   validateStringProperty({ devConfig, property: 'framework' })
 
   let settings = {}
 
   if (flags.dir || devConfig.framework === '#static') {
     // serving files statically without a framework server
-    settings = await handleStaticServer({ flags, log, devConfig, projectDir })
+    settings = await handleStaticServer({ flags, devConfig, projectDir })
   } else if (devConfig.framework === '#auto') {
     // this is the default CLI behavior
 
     // we don't need to run the detection if both command and targetPort are configured
     const runDetection = !hasCommandAndTargetPort({ devConfig })
-    const frameworkSettings = runDetection ? await detectFrameworkSettings({ projectDir, log }) : undefined
+    const frameworkSettings = runDetection ? await detectFrameworkSettings({ projectDir }) : undefined
 
     if (frameworkSettings === undefined && runDetection) {
       log(`${NETLIFYDEVWARN} No app server detected. Using simple static server`)
-      settings = await handleStaticServer({ flags, log, devConfig, projectDir })
+      settings = await handleStaticServer({ flags, devConfig, projectDir })
     } else {
       validateFrameworkConfig({ devConfig })
       const { command, frameworkPort, dist, framework, env, pollingStrategies = [] } = frameworkSettings || {}
       settings = {
         command: devConfig.command || command,
         frameworkPort: devConfig.targetPort || frameworkPort,
-        dist: devConfig.publish || dist || getDefaultDist({ log }),
+        dist: devConfig.publish || dist || getDefaultDist(),
         framework,
         env,
         pollingStrategies,
@@ -271,7 +272,7 @@ const detectServerSettings = async (devConfig, flags, projectDir, log) => {
   } else if (devConfig.framework === '#custom') {
     validateFrameworkConfig({ devConfig })
     // when the users wants to configure `command` and `targetPort`
-    settings = handleCustomFramework({ devConfig, log })
+    settings = handleCustomFramework({ devConfig })
   } else if (devConfig.framework) {
     validateFrameworkConfig({ devConfig })
     // this is when the user explicitly configures a framework, e.g. `framework = "gatsby"`

@@ -1,4 +1,5 @@
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const openBrowser = require('../../utils/open-browser')
 
 class OpenAdminCommand extends Command {
@@ -18,8 +19,8 @@ Run \`netlify link\` to connect to this folder to a site`)
     let siteData
     try {
       siteData = await api.getSite({ siteId })
-      this.log(`Opening "${siteData.name}" site admin UI:`)
-      this.log(`> ${siteData.admin_url}`)
+      log(`Opening "${siteData.name}" site admin UI:`)
+      log(`> ${siteData.admin_url}`)
     } catch (error) {
       // unauthorized
       if (error.status === 401) {
@@ -28,17 +29,17 @@ Run \`netlify link\` to connect to this folder to a site`)
       }
       // site not found
       if (error.status === 404) {
-        this.log()
-        this.log('Please double check this ID and verify you are logged in with the correct account')
-        this.log()
-        this.log('To fix this, run `netlify unlink` then `netlify link` to reconnect to the correct site ID')
-        this.log()
+        log()
+        log('Please double check this ID and verify you are logged in with the correct account')
+        log()
+        log('To fix this, run `netlify unlink` then `netlify link` to reconnect to the correct site ID')
+        log()
         this.error(`Site "${siteId}" not found in account`)
       }
       this.error(error)
     }
 
-    await openBrowser({ url: siteData.admin_url, log: this.log })
+    await openBrowser({ url: siteData.admin_url })
     this.exit()
   }
 }

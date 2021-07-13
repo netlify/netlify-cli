@@ -1,6 +1,5 @@
 const process = require('process')
 const { URL } = require('url')
-const { format, inspect } = require('util')
 
 const resolveConfig = require('@netlify/config')
 const { flags: flagsLib } = require('@oclif/command')
@@ -11,71 +10,20 @@ const API = require('netlify')
 const omit = require('omit.js').default
 
 const { getAgent } = require('../lib/http-agent')
-const { startSpinner, clearSpinner } = require('../lib/spinner')
 
 const chalkInstance = require('./chalk')
+const { pollForToken, log, getToken } = require('./command-helpers')
 const getGlobalConfig = require('./get-global-config')
 const openBrowser = require('./open-browser')
 const StateConfig = require('./state-config')
 const { track, identify } = require('./telemetry')
 const { TrackedCommand } = require('./telemetry/tracked-command')
 
-const { NETLIFY_AUTH_TOKEN, NETLIFY_API_URL } = process.env
+const { NETLIFY_API_URL } = process.env
 
 // Netlify CLI client id. Lives in bot@netlify.com
 // Todo setup client for multiple environments
 const CLIENT_ID = 'd6f37de6614df7ae58664cfca524744d73807a377f5ee71f1a254f78412e3750'
-
-// 'api' command uses JSON output by default
-// 'functions:invoke' need to return the data from the function as is
-const isDefaultJson = () => argv._[0] === 'functions:invoke' || (argv._[0] === 'api' && argv.list !== true)
-
-const getToken = async (tokenFromFlag) => {
-  // 1. First honor command flag --auth
-  if (tokenFromFlag) {
-    return [tokenFromFlag, 'flag']
-  }
-  // 2. then Check ENV var
-  if (NETLIFY_AUTH_TOKEN && NETLIFY_AUTH_TOKEN !== 'null') {
-    return [NETLIFY_AUTH_TOKEN, 'env']
-  }
-  // 3. If no env var use global user setting
-  const globalConfig = await getGlobalConfig()
-  const userId = globalConfig.get('userId')
-  const tokenFromConfig = globalConfig.get(`users.${userId}.auth.token`)
-  if (tokenFromConfig) {
-    return [tokenFromConfig, 'config']
-  }
-  return [null, 'not found']
-}
-
-// 5 Minutes
-const TOKEN_TIMEOUT = 3e5
-
-const pollForToken = async ({ api, ticket, exitWithError, chalk }) => {
-  const spinner = startSpinner({ text: 'Waiting for authorization...' })
-  try {
-    const accessToken = await api.getAccessToken(ticket, { timeout: TOKEN_TIMEOUT })
-    if (!accessToken) {
-      exitWithError('Could not retrieve access token')
-    }
-    return accessToken
-  } catch (error) {
-    if (error.name === 'TimeoutError') {
-      exitWithError(
-        `Timed out waiting for authorization. If you do not have a ${chalk.bold.greenBright(
-          'Netlify',
-        )} account, please create one at ${chalk.magenta(
-          'https://app.netlify.com/signup',
-        )}, then run ${chalk.cyanBright('netlify login')} again.`,
-      )
-    } else {
-      exitWithError(error)
-    }
-  } finally {
-    clearSpinner({ spinner })
-  }
-}
 
 class BaseCommand extends TrackedCommand {
   // Initialize context
@@ -85,8 +33,9 @@ class BaseCommand extends TrackedCommand {
     const cwd = argv.cwd || process.cwd()
     // Grab netlify API token
     const authViaFlag = getAuthArg(argv)
+    const { normalizeConfig } = BaseCommand
 
-    const [token] = await this.getConfigToken(authViaFlag)
+    const [token] = await getToken(authViaFlag)
 
     // Get site id & build state
     const state = new StateConfig(cwd)
@@ -102,11 +51,11 @@ class BaseCommand extends TrackedCommand {
 
     const cachedConfig = await this.getConfig({ cwd, state, token, ...apiUrlOpts })
     const { configPath, config, buildDir, repositoryRoot, siteInfo } = cachedConfig
-    const normalizedConfig = this.normalizeConfig(config)
+    const normalizedConfig = normalizeConfig(config)
 
     const { flags } = this.parse(BaseCommand)
     const agent = await getAgent({
-      log: this.log,
+      log,
       exit: this.exit,
       httpProxy: flags.httpProxy,
       certificateFile: flags.httpProxyCertificateFilename,
@@ -181,7 +130,7 @@ class BaseCommand extends TrackedCommand {
   // several ways. It detects it by checking if `build.publish` is `undefined`.
   // However, `@netlify/config` adds a default value to `build.publish`.
   // This removes it.
-  normalizeConfig(config) {
+  static normalizeConfig(config) {
     return config.build.publishOrigin === 'default'
       ? { ...config, build: omit(config.build, ['publish', 'publishOrigin']) }
       : config
@@ -194,21 +143,6 @@ class BaseCommand extends TrackedCommand {
     } catch (_) {
       return false
     }
-  }
-
-  logJson(message = '') {
-    if (argv.json || isDefaultJson()) {
-      process.stdout.write(JSON.stringify(message, null, 2))
-    }
-  }
-
-  log(message = '', ...args) {
-    /* If  --silent or --json flag passed disable logger */
-    if (argv.silent || argv.json || isDefaultJson()) {
-      return
-    }
-    message = typeof message === 'string' ? message : inspect(message)
-    process.stdout.write(`${format(message, ...args)}\n`)
   }
 
   /* Modified flag parser to support global --auth, --json, & --silent flags */
@@ -254,22 +188,13 @@ class BaseCommand extends TrackedCommand {
     })
   }
 
-  get chalk() {
+  static get chalk() {
     // If --json flag disable chalk colors
     return chalkInstance(argv.json)
   }
 
-  /**
-   * Get user netlify API token
-   * @param  {string} - [tokenFromFlag] - value passed in by CLI flag
-   * @return {Promise<[string, string]>} - Promise containing tokenValue & location of resolved Netlify API token
-   */
-  getConfigToken(tokenFromFlag) {
-    return getToken(tokenFromFlag)
-  }
-
   async authenticate(tokenFromFlag) {
-    const [token] = await this.getConfigToken(tokenFromFlag)
+    const [token] = await getToken(tokenFromFlag)
     if (token) {
       return token
     }
@@ -278,7 +203,7 @@ class BaseCommand extends TrackedCommand {
 
   async expensivelyAuthenticate() {
     const webUI = process.env.NETLIFY_WEB_UI || 'https://app.netlify.com'
-    this.log(`Logging into your Netlify account...`)
+    log(`Logging into your Netlify account...`)
 
     // Create ticket for auth
     const ticket = await this.netlify.api.createTicket({
@@ -288,8 +213,8 @@ class BaseCommand extends TrackedCommand {
     // Open browser for authentication
     const authLink = `${webUI}/authorize?response_type=ticket&ticket=${ticket.id}`
 
-    this.log(`Opening ${authLink}`)
-    await openBrowser({ url: authLink, log: this.log })
+    log(`Opening ${authLink}`)
+    await openBrowser({ url: authLink, log })
 
     const accessToken = await pollForToken({
       api: this.netlify.api,
@@ -327,13 +252,13 @@ class BaseCommand extends TrackedCommand {
     })
 
     // Log success
-    this.log()
-    this.log(`${this.chalk.greenBright('You are now logged into your Netlify account!')}`)
-    this.log()
-    this.log(`Run ${this.chalk.cyanBright('netlify status')} for account details`)
-    this.log()
-    this.log(`To see all available commands run: ${this.chalk.cyanBright('netlify help')}`)
-    this.log()
+    log()
+    log(`${this.chalk.greenBright('You are now logged into your Netlify account!')}`)
+    log()
+    log(`Run ${this.chalk.cyanBright('netlify status')} for account details`)
+    log()
+    log(`To see all available commands run: ${this.chalk.cyanBright('netlify help')}`)
+    log()
     return accessToken
   }
 }

@@ -8,6 +8,7 @@ const pWaitFor = require('p-wait-for')
 const { shouldFetchLatestVersion, fetchLatestVersion } = require('../lib/exec-fetcher')
 const { getPathInHome } = require('../lib/settings')
 
+const { log } = require('./command-helpers')
 const { NETLIFYDEVLOG, NETLIFYDEVERR } = require('./logo')
 
 const PACKAGE_NAME = 'live-tunnel-client'
@@ -18,8 +19,8 @@ const TUNNEL_POLL_INTERVAL = 1e3
 // 5 minutes
 const TUNNEL_POLL_TIMEOUT = 3e5
 
-const createTunnel = async function ({ siteId, netlifyApiToken, log }) {
-  await installTunnelClient(log)
+const createTunnel = async function ({ siteId, netlifyApiToken }) {
+  await installTunnelClient()
 
   if (!siteId) {
     console.error(
@@ -50,7 +51,7 @@ const createTunnel = async function ({ siteId, netlifyApiToken, log }) {
   return data
 }
 
-const connectTunnel = function ({ session, netlifyApiToken, localPort, log }) {
+const connectTunnel = function ({ session, netlifyApiToken, localPort }) {
   const execPath = getPathInHome(['tunnel', 'bin', EXEC_NAME])
   const args = ['connect', '-s', session.id, '-t', netlifyApiToken, '-l', localPort]
   if (process.env.DEBUG) {
@@ -64,7 +65,7 @@ const connectTunnel = function ({ session, netlifyApiToken, localPort, log }) {
   ps.on('SIGTERM', process.exit)
 }
 
-const installTunnelClient = async function (log) {
+const installTunnelClient = async function () {
   const binPath = getPathInHome(['tunnel', 'bin'])
   const shouldFetch = await shouldFetchLatestVersion({
     binPath,
@@ -87,11 +88,10 @@ const installTunnelClient = async function (log) {
   })
 }
 
-const startLiveTunnel = async ({ siteId, netlifyApiToken, localPort, log }) => {
+const startLiveTunnel = async ({ siteId, netlifyApiToken, localPort }) => {
   const session = await createTunnel({
     siteId,
     netlifyApiToken,
-    log,
   })
 
   const isLiveTunnelReady = async function () {
@@ -112,7 +112,7 @@ const startLiveTunnel = async ({ siteId, netlifyApiToken, localPort, log }) => {
     return data.state === 'online'
   }
 
-  await connectTunnel({ session, netlifyApiToken, localPort, log })
+  await connectTunnel({ session, netlifyApiToken, localPort })
 
   // Waiting for the live session to have a state of `online`.
   await pWaitFor(isLiveTunnelReady, {

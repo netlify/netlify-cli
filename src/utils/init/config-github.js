@@ -1,6 +1,7 @@
 const { Octokit } = require('@octokit/rest')
 const chalk = require('chalk')
 
+const { log } = require('../command-helpers')
 const ghauth = require('../gh-auth')
 
 const { getBuildSettings, saveNetlifyToml, formatErrorMessage, createDeployKey, setupSite } = require('./utils')
@@ -14,7 +15,7 @@ const PAGE_SIZE = 100
 
 const isValidToken = (token) => token && token.user && token.token
 
-const getGitHubToken = async ({ log, globalConfig }) => {
+const getGitHubToken = async ({ globalConfig }) => {
   const userId = globalConfig.get('userId')
   const githubToken = globalConfig.get(`users.${userId}.auth.github`)
 
@@ -22,9 +23,7 @@ const getGitHubToken = async ({ log, globalConfig }) => {
     return githubToken.token
   }
 
-  const newToken = await ghauth({
-    log,
-  })
+  const newToken = await ghauth()
   globalConfig.set(`users.${userId}.auth.github`, newToken)
   return newToken.token
 }
@@ -36,7 +35,7 @@ const getGitHubClient = ({ token }) => {
   return octokit
 }
 
-const addDeployKey = async ({ log, api, octokit, repoOwner, repoName, failAndExit }) => {
+const addDeployKey = async ({ api, octokit, repoOwner, repoName, failAndExit }) => {
   log('Adding deploy key to repository...')
   const key = await createDeployKey({ api, failAndExit })
   try {
@@ -149,7 +148,7 @@ const upsertHook = async ({ ntlHooks, event, api, siteId, token }) => {
   })
 }
 
-const addNotificationHooks = async ({ log, failAndExit, siteId, api, token }) => {
+const addNotificationHooks = async ({ failAndExit, siteId, api, token }) => {
   log(`Creating Netlify GitHub Notification Hooks...`)
 
   let ntlHooks
@@ -174,7 +173,7 @@ const addNotificationHooks = async ({ log, failAndExit, siteId, api, token }) =>
 }
 
 module.exports = async function configGithub({ context, siteId, repoOwner, repoName }) {
-  const { log, warn, error: failAndExit, netlify } = context
+  const { warn, error: failAndExit, netlify } = context
   const {
     api,
     globalConfig,
@@ -184,7 +183,7 @@ module.exports = async function configGithub({ context, siteId, repoOwner, repoN
     cachedConfig: { env, configPath },
   } = netlify
 
-  const token = await getGitHubToken({ log, globalConfig })
+  const token = await getGitHubToken({ globalConfig })
 
   const { baseDir, buildCmd, buildDir, functionsDir, pluginsToInstall } = await getBuildSettings({
     repositoryRoot,
@@ -197,7 +196,7 @@ module.exports = async function configGithub({ context, siteId, repoOwner, repoN
 
   const octokit = getGitHubClient({ token })
   const [deployKey, githubRepo] = await Promise.all([
-    addDeployKey({ log, api, octokit, repoOwner, repoName, failAndExit }),
+    addDeployKey({ api, octokit, repoOwner, repoName, failAndExit }),
     getGitHubRepo({ octokit, repoOwner, repoName, failAndExit }),
   ])
 
@@ -224,5 +223,5 @@ module.exports = async function configGithub({ context, siteId, repoOwner, repoN
   })
   await addDeployHook({ deployHook: updatedSite.deploy_hook, octokit, repoOwner, repoName, failAndExit })
   log()
-  await addNotificationHooks({ log, failAndExit, siteId, api, token })
+  await addNotificationHooks({ failAndExit, siteId, api, token })
 }

@@ -33,7 +33,7 @@ const SUPPORTED_PLATFORMS = {
   win32: 'Windows',
 }
 
-const getSetupStep = ({ skipInstall, log }) => {
+const getSetupStep = ({ skipInstall }) => {
   const platform = os.platform()
   const platformName = SUPPORTED_PLATFORMS[platform]
   if (platformName === undefined) {
@@ -49,7 +49,7 @@ See manual setup instructions in https://github.com/netlify/netlify-credential-h
       }
     },
     task: async () => {
-      await installHelper({ log })
+      await installHelper()
       await (platform === 'win32' ? setupWindowsPath() : setupUnixPath())
     },
   }
@@ -60,7 +60,7 @@ const setupGitConfigStep = {
   task: () => configureGitConfig(),
 }
 
-const installPlatform = async function ({ force, log }) {
+const installPlatform = async function ({ force }) {
   const skipInstall = !force && (await installedWithPackageManager())
   const steps = [
     checkGitVersionStep,
@@ -71,7 +71,7 @@ const installPlatform = async function ({ force, log }) {
         task.title += chalk.dim(' [installed]')
       }
     }),
-    getSetupStep({ skipInstall, log }),
+    getSetupStep({ skipInstall }),
     setupGitConfigStep,
   ]
 
@@ -92,7 +92,7 @@ const installedWithPackageManager = async function () {
   return withPackageManager
 }
 
-const installHelper = async function ({ log }) {
+const installHelper = async function () {
   // remove any old versions that might still exist in `~/.netlify/helper/bin`
   await rmdirRecursiveAsync(getLegacyBinPath())
   const binPath = getBinPath()
@@ -102,7 +102,6 @@ const installHelper = async function ({ log }) {
     execArgs: ['version'],
     pattern: `${EXEC_NAME}\\/v?([^\\s]+)`,
     execName: EXEC_NAME,
-    log,
   })
   if (!shouldFetch) {
     return

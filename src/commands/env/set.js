@@ -1,4 +1,5 @@
 const Command = require('../../utils/command')
+const { log, logJson } = require('../../utils/command-helpers')
 
 class EnvSetCommand extends Command {
   async run() {
@@ -7,7 +8,7 @@ class EnvSetCommand extends Command {
     const siteId = site.id
 
     if (!siteId) {
-      this.log('No site id found, please run inside a site folder or `netlify link`')
+      log('No site id found, please run inside a site folder or `netlify link`')
       return false
     }
 
@@ -37,11 +38,11 @@ class EnvSetCommand extends Command {
 
     // Return new environment variables of site if using json flag
     if (flags.json) {
-      this.logJson(siteResult.build_settings.env)
+      logJson(siteResult.build_settings.env)
       return false
     }
 
-    this.log(`Set environment variable ${name}=${value} for site ${siteData.name}`)
+    log(`Set environment variable ${name}=${value} for site ${siteData.name}`)
   }
 }
 

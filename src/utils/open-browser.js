@@ -4,7 +4,9 @@ const open = require('better-opn')
 const chalk = require('chalk')
 const isDockerContainer = require('is-docker')
 
-const unableToOpenBrowserMessage = function ({ url, log, message }) {
+const { log } = require('./command-helpers')
+
+const unableToOpenBrowserMessage = function ({ url, message }) {
   log('---------------------------')
   log(chalk.redBright(`Error: Unable to open browser automatically: ${message}`))
   log(chalk.cyan('Please open your browser and open the URL below:'))
@@ -12,14 +14,14 @@ const unableToOpenBrowserMessage = function ({ url, log, message }) {
   log('---------------------------')
 }
 
-const openBrowser = async function ({ url, log, silentBrowserNoneError }) {
+const openBrowser = async function ({ url, silentBrowserNoneError }) {
   if (isDockerContainer()) {
-    unableToOpenBrowserMessage({ url, log, message: 'Running inside a docker container' })
+    unableToOpenBrowserMessage({ url, message: 'Running inside a docker container' })
     return
   }
   if (process.env.BROWSER === 'none') {
     if (!silentBrowserNoneError) {
-      unableToOpenBrowserMessage({ url, log, message: "BROWSER environment variable is set to 'none'" })
+      unableToOpenBrowserMessage({ url, message: "BROWSER environment variable is set to 'none'" })
     }
     return
   }
@@ -27,7 +29,7 @@ const openBrowser = async function ({ url, log, silentBrowserNoneError }) {
   try {
     await open(url)
   } catch (error) {
-    unableToOpenBrowserMessage({ url, log, message: error.message })
+    unableToOpenBrowserMessage({ url, message: error.message })
   }
 }
 

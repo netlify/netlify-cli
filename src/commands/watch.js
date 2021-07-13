@@ -5,6 +5,7 @@ const pWaitFor = require('p-wait-for')
 const prettyjson = require('prettyjson')
 
 const Command = require('../utils/command')
+const { log } = require('../utils/command-helpers')
 
 const InitCommand = require('./init')
 
@@ -56,9 +57,9 @@ class SitesWatchCommand extends Command {
       const siteData = await client.getSite({ siteId })
 
       const message = chalk.cyanBright.bold.underline(noActiveBuilds ? 'Last build' : 'Deploy complete')
-      this.log()
-      this.log(message)
-      this.log(
+      log()
+      log(message)
+      log(
         prettyjson.render({
           URL: siteData.ssl_url || siteData.url,
           Admin: siteData.admin_url,

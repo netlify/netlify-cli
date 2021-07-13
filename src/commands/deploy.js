@@ -15,6 +15,7 @@ const { normalizeFunctionsConfig } = require('../lib/functions/config')
 const { getLogMessage } = require('../lib/log')
 const { startSpinner, stopSpinner } = require('../lib/spinner')
 const Command = require('../utils/command')
+const { log, logJson, getToken } = require('../utils/command-helpers')
 const { deploySite } = require('../utils/deploy/deploy-site')
 const { deployEdgeHandlers } = require('../utils/edge-handlers')
 const { NETLIFYDEV, NETLIFYDEVLOG, NETLIFYDEVERR } = require('../utils/logo')
@@ -25,7 +26,7 @@ const SitesCreateCommand = require('./sites/create')
 
 const DEFAULT_DEPLOY_TIMEOUT = 1.2e6
 
-const triggerDeploy = async ({ api, siteId, siteData, log, error }) => {
+const triggerDeploy = async ({ api, siteId, siteData, error }) => {
   try {
     const siteBuild = await api.createSiteBuild({ siteId })
     log(
@@ -40,7 +41,7 @@ const triggerDeploy = async ({ api, siteId, siteData, log, error }) => {
   }
 }
 
-const getDeployFolder = async ({ flags, config, site, siteData, log }) => {
+const getDeployFolder = async ({ flags, config, site, siteData }) => {
   let deployFolder
   if (flags.dir) {
     deployFolder = path.resolve(process.cwd(), flags.dir)
@@ -104,7 +105,7 @@ const getFunctionsFolder = ({ flags, config, site, siteData }) => {
   return functionsFolder
 }
 
-const validateFunctionsFolder = async ({ functionsFolder, log, error }) => {
+const validateFunctionsFolder = async ({ functionsFolder, error }) => {
   let stat
   if (functionsFolder) {
     // we used to hard error if functions folder is specified but doesn't exist
@@ -131,9 +132,9 @@ const validateFunctionsFolder = async ({ functionsFolder, log, error }) => {
   return stat
 }
 
-const validateFolders = async ({ deployFolder, functionsFolder, error, log }) => {
+const validateFolders = async ({ deployFolder, functionsFolder, error }) => {
   const deployFolderStat = await validateDeployFolder({ deployFolder, error })
-  const functionsFolderStat = await validateFunctionsFolder({ functionsFolder, error, log })
+  const functionsFolderStat = await validateFunctionsFolder({ functionsFolder, error })
   return { deployFolderStat, functionsFolderStat }
 }
 
@@ -166,7 +167,7 @@ const SEC_TO_MILLISEC = 1e3
 // 100 bytes
 const SYNC_FILE_LIMIT = 1e2
 
-const prepareProductionDeploy = async ({ siteData, api, log, exit }) => {
+const prepareProductionDeploy = async ({ siteData, api, exit }) => {
   if (isObject(siteData.published_deploy) && siteData.published_deploy.locked) {
     log(`\n${NETLIFYDEVERR} Deployments are "locked" for production context of this site\n`)
     const { unlockChoice } = await inquirer.prompt([
@@ -235,7 +236,6 @@ const runDeploy = async ({
   functionsConfig,
   functionsFolder,
   alias,
-  log,
   warn,
   error,
   exit,
@@ -244,7 +244,7 @@ const runDeploy = async ({
   let deployId
   try {
     if (deployToProduction) {
-      await prepareProductionDeploy({ siteData, api, log, exit })
+      await prepareProductionDeploy({ siteData, api, exit })
     } else {
       log('Deploying to draft URL...')
     }
@@ -301,7 +301,7 @@ const handleBuild = async ({ context, flags }) => {
   if (!flags.build) {
     return
   }
-  const [token] = await context.getConfigToken()
+  const [token] = await context.getToken()
   const options = await getBuildOptions({
     context,
     token,
@@ -314,7 +314,7 @@ const handleBuild = async ({ context, flags }) => {
   return newConfig
 }
 
-const printResults = ({ flags, results, deployToProduction, log, logJson, exit }) => {
+const printResults = ({ flags, results, deployToProduction, exit }) => {
   const msgData = {
     Logs: `${results.logsUrl}`,
     'Unique Deploy URL': results.deployUrl,
@@ -361,9 +361,12 @@ const printResults = ({ flags, results, deployToProduction, log, logJson, exit }
 class DeployCommand extends Command {
   async run() {
     const { flags } = this.parse(DeployCommand)
-    const { log, logJson, warn, error, exit } = this
+    const { warn, error, exit } = this
     const { api, site } = this.netlify
     const alias = flags.alias || flags.branch
+
+    // for build context
+    this.getToken = getToken
 
     this.setAnalyticsPayload({ open: flags.open, prod: flags.prod, json: flags.json, alias: Boolean(alias) })
 
@@ -387,7 +390,7 @@ class DeployCommand extends Command {
         }
       }
     } else {
-      this.log("This folder isn't linked to a site yet")
+      log("This folder isn't linked to a site yet")
       const NEW_SITE = '+  Create & configure a new site'
       const EXISTING_SITE = 'Link this directory to an existing site'
 
@@ -418,13 +421,13 @@ class DeployCommand extends Command {
     const deployToProduction = flags.prod || (flags.prodIfUnlocked && !siteData.published_deploy.locked)
 
     if (flags.trigger) {
-      return triggerDeploy({ api, siteId, siteData, log, error })
+      return triggerDeploy({ api, siteId, siteData, error })
     }
 
     const newConfig = await handleBuild({ context: this, flags })
     const config = newConfig || this.netlify.config
 
-    const deployFolder = await getDeployFolder({ flags, config, site, siteData, log })
+    const deployFolder = await getDeployFolder({ flags, config, site, siteData })
     const functionsFolder = getFunctionsFolder({ flags, config, site, siteData })
     const { configPath } = site
 
@@ -440,7 +443,6 @@ class DeployCommand extends Command {
       deployFolder,
       functionsFolder,
       error,
-      log,
     })
     const functionsConfig = normalizeFunctionsConfig({ functionsConfig: config.functions, projectRoot: site.root })
     const results = await runDeploy({
@@ -456,17 +458,16 @@ class DeployCommand extends Command {
       // pass undefined functionsFolder if doesn't exist
       functionsFolder: functionsFolderStat && functionsFolder,
       alias,
-      log,
       warn,
       error,
       exit,
     })
 
-    printResults({ flags, results, deployToProduction, log, logJson, exit })
+    printResults({ flags, results, deployToProduction, exit })
 
     if (flags.open) {
       const urlToOpen = deployToProduction ? results.siteUrl : results.deployUrl
-      await openBrowser({ url: urlToOpen, log })
+      await openBrowser({ url: urlToOpen })
       exit()
     }
   }

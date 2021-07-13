@@ -16,6 +16,7 @@ const ora = require('ora')
 const { mkdirRecursiveSync } = require('../../lib/fs')
 const { getSiteData, getAddons, getCurrentAddon } = require('../../utils/addons/prepare')
 const Command = require('../../utils/command')
+const { log } = require('../../utils/command-helpers')
 const { injectEnvVariables } = require('../../utils/dev')
 const { NETLIFYDEVLOG, NETLIFYDEVWARN, NETLIFYDEVERR } = require('../../utils/logo')
 const { readRepoURL, validateRepoURL } = require('../../utils/read-repo-url')
@@ -196,7 +197,6 @@ const DEFAULT_PRIORITY = 999
 const ensureFunctionDirExists = async function (context) {
   const { api, config, site } = context.netlify
   const siteId = site.id
-  const { log } = context
   let functionsDirHolder = config.functionsDirectory
 
   if (!functionsDirHolder) {
@@ -259,7 +259,7 @@ const downloadFromURL = async function (context, flags, args, functionsDir) {
 
   const fnFolder = path.join(functionsDir, nameToUse)
   if (fs.existsSync(`${fnFolder}.js`) && fs.lstatSync(`${fnFolder}.js`).isFile()) {
-    context.log(
+    log(
       `${NETLIFYDEVWARN}: A single file version of the function ${nameToUse} already exists at ${fnFolder}.js. Terminating without further action.`,
     )
     process.exit(1)
@@ -283,9 +283,9 @@ const downloadFromURL = async function (context, flags, args, functionsDir) {
     }),
   )
 
-  context.log(`${NETLIFYDEVLOG} Installing dependencies for ${nameToUse}...`)
+  log(`${NETLIFYDEVLOG} Installing dependencies for ${nameToUse}...`)
   cp.exec('npm i', { cwd: path.join(functionsDir, nameToUse) }, () => {
-    context.log(`${NETLIFYDEVLOG} Installing dependencies for ${nameToUse} complete `)
+    log(`${NETLIFYDEVLOG} Installing dependencies for ${nameToUse} complete `)
   })
 
   // read, execute, and delete function template file if exists
@@ -333,7 +333,7 @@ const scaffoldFromTemplate = async function (context, flags, args, functionsDir)
       process.exit(1)
     }
   } else if (chosentemplate === 'report') {
-    context.log(`${NETLIFYDEVLOG} Open in browser: https://github.com/netlify/cli/issues/new`)
+    log(`${NETLIFYDEVLOG} Open in browser: https://github.com/netlify/cli/issues/new`)
   } else {
     const { onComplete, name: templateName, lang, addons = [] } = chosentemplate
 
@@ -346,8 +346,8 @@ const scaffoldFromTemplate = async function (context, flags, args, functionsDir)
 
     const name = await getNameFromArgs(args, flags, templateName)
 
-    context.log(`${NETLIFYDEVLOG} Creating function ${chalk.cyan.inverse(name)}`)
-    const functionPath = ensureFunctionPathIsOk(context, functionsDir, name)
+    log(`${NETLIFYDEVLOG} Creating function ${chalk.cyan.inverse(name)}`)
+    const functionPath = ensureFunctionPathIsOk(functionsDir, name)
 
     // SWYX: note to future devs - useful for debugging source to output issues
     // this.log('from ', pathToTemplate, ' to ', functionPath)
@@ -385,7 +385,7 @@ const scaffoldFromTemplate = async function (context, flags, args, functionsDir)
 
 const TEMPLATE_PERMISSIONS = 0o777
 
-const createFunctionAddon = async function ({ api, addons, siteId, addonName, siteData, log, error }) {
+const createFunctionAddon = async function ({ api, addons, siteId, addonName, siteData, error }) {
   try {
     const addon = getCurrentAddon({ addons, addonName })
     if (addon && addon.id) {
@@ -405,9 +405,9 @@ const createFunctionAddon = async function ({ api, addons, siteId, addonName, si
 }
 
 const injectEnvVariablesFromContext = async ({ context }) => {
-  const { log, warn, netlify } = context
+  const { warn, netlify } = context
   const { cachedConfig, site } = netlify
-  await injectEnvVariables({ env: cachedConfig.env, log, site, warn })
+  await injectEnvVariables({ env: cachedConfig.env, site, warn })
 }
 
 const handleOnComplete = async ({ context, onComplete }) => {
@@ -444,7 +444,7 @@ const installAddons = async function (context, functionAddons, fnPath) {
     return
   }
 
-  const { log, error } = context
+  const { error } = context
   const { api, site } = context.netlify
   const siteId = site.id
   if (!siteId) {
@@ -467,7 +467,6 @@ const installAddons = async function (context, functionAddons, fnPath) {
         siteId,
         addonName,
         siteData,
-        log,
         error,
       })
 
@@ -481,10 +480,10 @@ const installAddons = async function (context, functionAddons, fnPath) {
 
 // we used to allow for a --dir command,
 // but have retired that to force every scaffolded function to be a directory
-const ensureFunctionPathIsOk = function (context, functionsDir, name) {
+const ensureFunctionPathIsOk = function (functionsDir, name) {
   const functionPath = path.join(functionsDir, name)
   if (fs.existsSync(functionPath)) {
-    context.log(`${NETLIFYDEVLOG} Function ${functionPath} already exists, cancelling...`)
+    log(`${NETLIFYDEVLOG} Function ${functionPath} already exists, cancelling...`)
     process.exit(1)
   }
   return functionPath

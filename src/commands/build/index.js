@@ -6,12 +6,13 @@ const Command = require('../../utils/command')
 class BuildCommand extends Command {
   // Run Netlify Build
   async run() {
+    const { getToken } = Command
     const { flags } = this.parse(BuildCommand)
 
     this.setAnalyticsPayload({ dry: flags.dry })
 
     // Retrieve Netlify Build options
-    const [token] = await this.getConfigToken()
+    const [token] = await getToken()
 
     const options = await getBuildOptions({
       context: this,

@@ -8,6 +8,7 @@ const prettyjson = require('prettyjson')
 const { v4: uuidv4 } = require('uuid')
 
 const Command = require('../../utils/command')
+const { log, logJson } = require('../../utils/command-helpers')
 const { getRepoData } = require('../../utils/get-repo-data')
 const { configureRepo } = require('../../utils/init/config')
 const { track } = require('../../utils/telemetry')
@@ -17,7 +18,6 @@ const SITE_NAME_SUGGESTION_SUFFIX_LENGTH = 5
 class SitesCreateCommand extends Command {
   async run() {
     const { flags } = this.parse(SitesCreateCommand)
-
     const { api } = this.netlify
 
     await this.authenticate()
@@ -104,12 +104,12 @@ class SitesCreateCommand extends Command {
     }
     await inputSiteName(nameFlag)
 
-    this.log()
-    this.log(chalk.greenBright.bold.underline(`Site Created`))
-    this.log()
+    log()
+    log(chalk.greenBright.bold.underline(`Site Created`))
+    log()
 
     const siteUrl = site.ssl_url || site.url
-    this.log(
+    log(
       prettyjson.render({
         'Admin URL': site.admin_url,
         URL: siteUrl,
@@ -124,13 +124,13 @@ class SitesCreateCommand extends Command {
     })
 
     if (flags['with-ci']) {
-      this.log('Configuring CI')
-      const repoData = await getRepoData({ log: this.log })
+      log('Configuring CI')
+      const repoData = await getRepoData()
       await configureRepo({ context: this, siteId: site.id, repoData, manual: flags.manual })
     }
 
     if (flags.json) {
-      this.logJson(
+      logJson(
         pick(site, [
           'id',
           'state',

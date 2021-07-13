@@ -10,6 +10,7 @@ const waitPort = require('wait-port')
 const { getPathInProject } = require('../lib/settings')
 const { clearSpinner, startSpinner, stopSpinner } = require('../lib/spinner')
 
+const { log } = require('./command-helpers')
 const { createDeferred } = require('./deferred')
 const { NETLIFYDEVLOG, NETLIFYDEVERR, NETLIFYDEVWARN } = require('./logo')
 
@@ -20,7 +21,6 @@ const startForwardProxy = async ({
   frameworkPort,
   functionsPort,
   publishDir,
-  log,
   debug,
   locationDb,
   jwtRolesPath,
@@ -61,8 +61,8 @@ const startForwardProxy = async ({
     args.push('--signature-secret', jwtSecret)
   }
 
-  const { subprocess } = runProcess({ log, args })
-  const { forwarder, firstBundleReady } = forwardMessagesToLog({ log, subprocess })
+  const { subprocess } = runProcess({ args })
+  const { forwarder, firstBundleReady } = forwardMessagesToLog({ subprocess })
 
   subprocess.on('close', process.exit)
   subprocess.on('SIGINT', process.exit)
@@ -94,7 +94,7 @@ const startForwardProxy = async ({
   }
 }
 
-const forwardMessagesToLog = ({ log, subprocess }) => {
+const forwardMessagesToLog = ({ subprocess }) => {
   const { promise: firstBundleReady, reject: firstBundleReject, resolve: firstBundleResolve } = createDeferred()
 
   let currentId = null

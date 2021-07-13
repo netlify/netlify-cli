@@ -4,6 +4,7 @@ const clean = require('clean-deep')
 const prettyjson = require('prettyjson')
 
 const Command = require('../../utils/command')
+const { log, logJson, getToken } = require('../../utils/command-helpers')
 
 class StatusCommand extends Command {
   async run() {
@@ -11,18 +12,18 @@ class StatusCommand extends Command {
     const { flags } = this.parse(StatusCommand)
 
     const current = globalConfig.get('userId')
-    const [accessToken] = await this.getConfigToken()
+    const [accessToken] = await getToken
 
     if (!accessToken) {
-      this.log(`Not logged in. Please log in to see site status.`)
-      this.log()
-      this.log('Login with "netlify login" command')
+      log(`Not logged in. Please log in to see site status.`)
+      log()
+      log('Login with "netlify login" command')
       this.exit()
     }
 
     const siteId = site.id
 
-    this.log(`──────────────────────┐
+    log(`──────────────────────┐
  Current Netlify User │
 ──────────────────────┘`)
 
@@ -55,7 +56,7 @@ class StatusCommand extends Command {
 
     const cleanAccountData = clean(accountData)
 
-    this.log(prettyjson.render(cleanAccountData))
+    log(prettyjson.render(cleanAccountData))
 
     if (!siteId) {
       this.warn('Did you run `netlify link` yet?')
@@ -79,7 +80,7 @@ class StatusCommand extends Command {
 
     // Json only logs out if --json flag is passed
     if (flags.json) {
-      this.logJson({
+      logJson({
         account: cleanAccountData,
         siteData: {
           'site-name': `${siteData.name}`,
@@ -91,10 +92,10 @@ class StatusCommand extends Command {
       })
     }
 
-    this.log(`────────────────────┐
+    log(`────────────────────┐
  Netlify Site Info  │
 ────────────────────┘`)
-    this.log(
+    log(
       prettyjson.render({
         'Current site': `${siteData.name}`,
         'Netlify TOML': site.configPath,
@@ -103,7 +104,7 @@ class StatusCommand extends Command {
         'Site Id': chalk.yellowBright(siteData.id),
       }),
     )
-    this.log()
+    log()
   }
 }
 

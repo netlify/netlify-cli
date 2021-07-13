@@ -1,4 +1,5 @@
 const Command = require('../utils/command')
+const { log } = require('../utils/command-helpers')
 const { track } = require('../utils/telemetry')
 
 class UnlinkCommand extends Command {
@@ -7,7 +8,7 @@ class UnlinkCommand extends Command {
     const siteId = site.id
 
     if (!siteId) {
-      this.log(`Folder is not linked to a Netlify site. Run 'netlify link' to link it`)
+      log(`Folder is not linked to a Netlify site. Run 'netlify link' to link it`)
       return this.exit()
     }
 
@@ -25,9 +26,9 @@ class UnlinkCommand extends Command {
     })
 
     if (site) {
-      this.log(`Unlinked ${site.configPath} from ${siteData ? siteData.name : siteId}`)
+      log(`Unlinked ${site.configPath} from ${siteData ? siteData.name : siteId}`)
     } else {
-      this.log('Unlinked site')
+      log('Unlinked site')
     }
   }
 }

@@ -14,11 +14,11 @@ const permissionError = "You don't have access to this file."
 
 class StateConfig {
   constructor(cwd) {
-    this.path = this.findStatePath(cwd)
+    this.path = StateConfig.findStatePath(cwd)
   }
 
   // Finds location of `.netlify/state.json`
-  findStatePath(cwd) {
+  static findStatePath(cwd) {
     const statePath = findUp.sync([STATE_PATH], { cwd })
 
     if (!statePath) {

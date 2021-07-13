@@ -7,8 +7,9 @@ const { printBanner } = require('../../utils/lm/ui')
 class LmInstallCommand extends Command {
   async run() {
     const { flags } = this.parse(LmInstallCommand)
+    const { log } = Command
 
-    const installed = await installPlatform({ force: flags.force, log: this.log })
+    const installed = await installPlatform({ force: flags.force, log })
     if (installed) {
       printBanner(this, flags.force)
     }

@@ -5,7 +5,6 @@ module.exports = {
   rules: {
     // Those rules from @netlify/eslint-config-node are currently disabled
     // TODO: remove, so those rules are enabled
-    'class-methods-use-this': 0,
     complexity: 0,
     'max-depth': 0,
     'max-lines': 0,

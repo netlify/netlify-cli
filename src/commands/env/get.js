@@ -1,4 +1,5 @@
 const Command = require('../../utils/command')
+const { log, logJson } = require('../../utils/command-helpers')
 
 class EnvGetCommand extends Command {
   async run() {
@@ -7,7 +8,7 @@ class EnvGetCommand extends Command {
     const siteId = site.id
 
     if (!siteId) {
-      this.log('No site id found, please run inside a site folder or `netlify link`')
+      log('No site id found, please run inside a site folder or `netlify link`')
       return false
     }
 
@@ -18,16 +19,16 @@ class EnvGetCommand extends Command {
 
     // Return json response for piping commands
     if (flags.json) {
-      this.logJson(value ? { [name]: value } : {})
+      logJson(value ? { [name]: value } : {})
       return false
     }
 
     if (!value) {
-      this.log(`Environment variable ${name} not set for site ${siteData.name}`)
+      log(`Environment variable ${name} not set for site ${siteData.name}`)
       return false
     }
 
-    this.log(value)
+    log(value)
   }
 }
 

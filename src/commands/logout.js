@@ -1,14 +1,15 @@
 const Command = require('../utils/command')
+const { log, getToken } = require('../utils/command-helpers')
 const { track } = require('../utils/telemetry')
 
 class LogoutCommand extends Command {
   async run() {
-    const [accessToken, location] = await this.getConfigToken()
+    const [accessToken, location] = await getToken()
 
     if (!accessToken) {
-      this.log(`Already logged out`)
-      this.log()
-      this.log('To login run "netlify login"')
+      log(`Already logged out`)
+      log()
+      log('To login run "netlify login"')
       this.exit()
     }
 
@@ -18,14 +19,14 @@ class LogoutCommand extends Command {
     this.netlify.globalConfig.set('userId', null)
 
     if (location === 'env') {
-      this.log('The "process.env.NETLIFY_AUTH_TOKEN" is still set in your terminal session')
-      this.log()
-      this.log('To logout completely, unset the environment variable')
-      this.log()
+      log('The "process.env.NETLIFY_AUTH_TOKEN" is still set in your terminal session')
+      log()
+      log('To logout completely, unset the environment variable')
+      log()
       this.exit()
     }
 
-    this.log(`Logging you out of Netlify. Come back soon!`)
+    log(`Logging you out of Netlify. Come back soon!`)
   }
 }
 
